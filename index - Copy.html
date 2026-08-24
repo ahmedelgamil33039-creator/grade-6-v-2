@@ -628,7 +628,7 @@
 
     <!-- SCRIPT ENGINE -->
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyhWts59cftnAZO_4HhummN6jA98B7a92M1N_dGUW3KK34ikgyzgaQ5Ghxa45g-sn90TQ/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw57M_6KfiX3VJbKdOlXO5FsKoKSetuSD160CdezSuOCMlTIyr65X8gM9gdIoEUo7WP/exec";
         const NEW_BANNER_URL = "https://i.postimg.cc/Y2FdWsdv/ghlaf.jpg";
 
         let audioCtx = null;
@@ -1413,7 +1413,6 @@
                 DB.results.push(resultObj);
             }
 
-            let lastEssaySub = null;
             if (essayQuestions.length > 0) {
                 let essayAnswersMap = {};
                 essayQuestions.forEach(q => {
@@ -1424,7 +1423,7 @@
                 essayQuestions.forEach(q => maxEssayPoints += q.points);
 
                 if (!DB.essaySubmissions) DB.essaySubmissions = [];
-                lastEssaySub = {
+                DB.essaySubmissions.push({
                     id: 'esub_' + Date.now(),
                     studentId: currentStudent.id,
                     studentName: currentStudent.name,
@@ -1434,8 +1433,7 @@
                     totalEarned: 0,
                     maxTotal: maxEssayPoints,
                     feedback: {}
-                };
-                DB.essaySubmissions.push(lastEssaySub);
+                });
             }
 
             if (!isPreviewMode) {
@@ -1444,7 +1442,7 @@
 
             if (percent >= 75) playSound('fanfare');
 
-            displayComprehensiveStudentResult(resultObj, lastEssaySub);
+            displayComprehensiveStudentResult(resultObj, essayQuestions.length > 0 ? DB.essaySubmissions[DB.essaySubmissions.length - 1] : null);
         }
 
         // --- ADMIN PANEL LOGIC ---
