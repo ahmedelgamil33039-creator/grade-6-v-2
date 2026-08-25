@@ -1766,6 +1766,20 @@
                         options: [],
                         correctText: 'مقالي'
                     });
+                } else if (type === 'true_false') {
+                    let cText = cleanOption(qObj.correctAns);
+                    let isTrue = cText.includes('صح') || cText.includes('صواب') || cText.includes('نعم');
+                    qsArray.push({
+                        id: `q_bulk_tf_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                        type: 'true_false',
+                        text: cleanQText,
+                        options: ['عبارة صحيحة', 'عبارة خاطئة'],
+                        correct: isTrue ? 0 : 1,
+                        correctText: isTrue ? 'عبارة صحيحة' : 'عبارة خاطئة',
+                        points: 1,
+                        image: qObj.image || '',
+                        explanation: qObj.explanation || 'لا يوجد شرح إضافي.'
+                    });
                 } else {
                     let cText = cleanOption(qObj.correctAns);
                     let cIdx = qObj.options.findIndex(o => normalizeMatch(o) === normalizeMatch(cText));
@@ -1786,11 +1800,14 @@
 
             lines.forEach(line => {
                 const lLower = line.toLowerCase();
-                if (line.includes('مقالي')) currentSectionType = 'essay';
-                else if (line.includes('اختيار من متعدد')) currentSectionType = 'mcq';
-                else if (line.includes('أكمل')) currentSectionType = 'complete';
-                else if (line.includes('صوب')) currentSectionType = 'correct_error';
-                else if (line.includes('صواب')) currentSectionType = 'true_false';
+                if (line.includes('###')) {
+                    if (line.includes('مقالي')) currentSectionType = 'essay';
+                    else if (line.includes('اختيار من متعدد') || line.includes('اللغز')) currentSectionType = 'mcq';
+                    else if (line.includes('أكمل')) currentSectionType = 'complete';
+                    else if (line.includes('صوّب') || line.includes('صوب')) currentSectionType = 'correct_error';
+                    else if (line.includes('صح أو خطأ') || line.includes('صواب أو خطأ')) currentSectionType = 'true_false';
+                    return;
+                }
 
                 if (lLower.startsWith('سؤال') || /^\d+[\-\.\)]\s+/.test(line)) {
                     if (currentQ) finalizeAndPush(currentQ, newQs, currentSectionType);
@@ -1804,6 +1821,16 @@
                             currentQ.image = line.replace(/^(الصورة|رابط)\s*[:\-]\s*/i, '').trim();
                         } else if (/^الدرجة\s*[:\-]/i.test(line)) {
                             currentQ.points = parseInt(line.replace(/^الدرجة\s*[:\-]\s*/i, '')) || 5;
+                        } else {
+                            currentQ.text += ' ' + line;
+                        }
+                    } else if (currentSectionType === 'true_false') {
+                        if (lLower.startsWith('الإجابة') || lLower.startsWith('الاجابة')) {
+                            currentQ.correctAns = line.replace(/^(الإجابة|الاجابة)\s*[:\-]?\s*/i, '').trim();
+                        } else if (lLower.startsWith('الشرح')) {
+                            currentQ.explanation = line.replace(/^الشرح\s*[:\-]?\s*/i, '').trim();
+                        } else if (lLower.startsWith('صورة')) {
+                            currentQ.image = line.replace(/^صورة\s*[:\-]?\s*/i, '').trim();
                         } else {
                             currentQ.text += ' ' + line;
                         }
@@ -2099,7 +2126,7 @@
             }
         }
 
-        function exportResultsCSV() {
+        exportResultsCSV = function() {
             if (DB.results.length === 0) {
                 showToast('لا توجد نتائج للتصدير.', 'fa-circle-exclamation', true);
                 return;
